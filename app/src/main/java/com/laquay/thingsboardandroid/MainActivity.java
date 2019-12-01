@@ -1,6 +1,8 @@
 package com.laquay.thingsboardandroid;
 
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -9,6 +11,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
@@ -17,8 +20,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.android.volley.Request.Method;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -27,11 +32,33 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     public static final String TAG = MainActivity.class.getSimpleName();
+    private static final String baseURL = "https://demo.thingsboard.io/api";
+    private static final String AUTH_TOKEN_KEY = "AUTH_TOKEN_KEY";
+    private String authToken;
+    private SharedPreferences sharedPreferences;
+
+    private TextView tv1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Resources related
         setContentView(R.layout.activity_main);
+        tv1 = findViewById(R.id.text1);
+
+        // Instantiate the SharedPreferences
+        sharedPreferences = this.getSharedPreferences(getApplicationContext().getPackageName(), Context.MODE_PRIVATE);
+
+        // Read AUTH token if exists
+        authToken = sharedPreferences.getString(AUTH_TOKEN_KEY, "NO_KEY");
+
+        // Draw in screen
+        addDataToScreen();
+    }
+
+    private void addDataToScreen() {
+        getDeviceTypes();
     }
 
     public void openLoginDialog() {
@@ -65,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void obtainThingsBoardToken(String username, String password) {
-        String loginURL = "https://demo.thingsboard.io/api/auth/login";
+        String loginURL = baseURL + "/auth/login";
 
         JSONObject jsonBody = new JSONObject();
         try {
@@ -80,6 +107,13 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONObject response) {
                         Log.d(TAG, response.toString());
+
+                        try {
+                            authToken = response.getString("token");
+                            sharedPreferences.edit().putString(AUTH_TOKEN_KEY, authToken).apply();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                         Toast.makeText(getApplicationContext(), R.string.auth_ok, Toast.LENGTH_SHORT).show();
                     }
                 },
@@ -99,6 +133,35 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         VolleyController.getInstance(this).addToQueue(jsonObjReq);
+    }
+
+    public void getDeviceTypes() {
+        String URL = baseURL + "/device/types";
+
+        JsonArrayRequest jsonArrReq = new JsonArrayRequest(Method.GET, URL, null,
+                new Response.Listener<JSONArray>() {
+                    @Override
+                    public void onResponse(JSONArray response) {
+                        Log.d(TAG, response.toString());
+
+                        tv1.setText(response.toString());
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d(TAG, error.toString());
+                    }
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                HashMap<String, String> headers = new HashMap<>();
+                headers.put("Accept", "application/json");
+                headers.put("X-Authorization", "Bearer " + authToken);
+                return headers;
+            }
+        };
+        VolleyController.getInstance(this).addToQueue(jsonArrReq);
     }
 
     @Override
