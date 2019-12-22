@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void addDataToScreen() {
         getDeviceTypes();
+        getTelemetryValuesOfADevice("someType", "someDeviceId");
     }
 
     public void openLoginDialog() {
@@ -162,6 +163,33 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         VolleyController.getInstance(this).addToQueue(jsonArrReq);
+    }
+
+    private void getTelemetryValuesOfADevice(String deviceType, String deviceId) {
+        String URL = baseURL + "/plugins/telemetry/" + deviceType + "/" + deviceId + "/values/timeseries";
+
+        JsonObjectRequest jsonObjReq = new JsonObjectRequest(Method.GET, URL, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.d(TAG, response.toString());
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d(TAG, error.toString());
+                    }
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                HashMap<String, String> headers = new HashMap<>();
+                headers.put("Accept", "application/json");
+                headers.put("X-Authorization", "Bearer " + authToken);
+                return headers;
+            }
+        };
+        VolleyController.getInstance(this).addToQueue(jsonObjReq);
     }
 
     @Override
