@@ -10,8 +10,10 @@ All the HTTP Rest information is obtained from the [ThingsBoard Swagger](https:/
 Authentication based in *user - password*. Get a Token.
 
 ### GetDeviceTypes
+
 URL: https://demo.thingsboard.io/swagger-ui.html#!/device-controller/getDeviceTypesUsingGET
 
 ### GetDeviceTelemetryValues
 *DeviceType* and *DeviceId* are required and hardcoded in example.
+
 URL: https://demo.thingsboard.io/swagger-ui.html#!/telemetry-controller/getTimeseriesUsingGET
